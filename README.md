@@ -4,6 +4,12 @@
 
 Node.js
 
+## Supported features
+
+- Save all CPQ modules and variants to XLS file
+- Update all CPQ modules and variants from XLS file
+- Only global features supported
+
 ## Commands
 
 ### Configuration management
@@ -33,3 +39,15 @@ Setting up connection "test1"
   - Testing connection to https://asm-admin.tactoncpq.com as api_admin... OK
 Configuration has been saved
 ```
+
+### Read CPQ data to XLS
+
+```
+Commands:
+  main.js read cpq-to-xls [conf] [file]  Reads model data from CPQ and saves it
+                                         into Excel file`
+```
+
+Example:
+
+`node src\main.js read cpq-to-xls test1 out\cpq_data.xlsx`
