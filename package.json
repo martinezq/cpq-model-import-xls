@@ -1,0 +1,30 @@
+{
+  "name": "cpq-model-import-xls",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/martinezq/cpq-model-import-xls.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/martinezq/cpq-model-import-xls/issues"
+  },
+  "homepage": "https://github.com/martinezq/cpq-model-import-xls#readme",
+  "dependencies": {
+    "axios": "^0.26.1",
+    "chalk": "^5.0.1",
+    "clui": "^0.3.6",
+    "configstore": "^6.0.0",
+    "exceljs": "^4.3.0",
+    "prompts": "^2.4.2",
+    "ramda": "^0.28.0",
+    "yargs": "^17.4.0"
+  },
+  "type": "module"
+}
