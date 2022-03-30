@@ -2,7 +2,9 @@
 
 ## Requirements
 
-Node.js
+Node.js (LTS)
+
+https://nodejs.org/en/
 
 ## Instalation
 
