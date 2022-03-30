@@ -4,6 +4,14 @@
 
 Node.js
 
+## Instalation
+
+1. Download content of this repository
+2. Install Node.js
+3. Open terminal (`cmd` on Windows)
+4. Navigate to project's directory
+5. Run command `npm install`
+
 ## Supported features
 
 - Save all CPQ modules and variants to XLS file
@@ -51,3 +59,18 @@ Commands:
 Example:
 
 `node src\main.js read cpq-to-xls test1 out\cpq_data.xlsx`
+
+### Write XLS data to CPQ
+
+```
+Commands:
+  main.js write xls-to-cpq [file] [conf]  Write from xlsx file to CPQ
+```
+
+Example:
+
+`node src\main.js write xls-to-cpq out\cpq_data.xlsx test1`
+
+after few seconds the tool will prompt for confirmation:
+
+`? Import to CPQ ticket T-00000157 with content of out\cpq_data.xlsx? (188 modules with total 934 variants will be recreated) » (y/N)`
