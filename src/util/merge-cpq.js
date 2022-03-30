@@ -11,7 +11,7 @@ function mergeVariants(oldVariants, newVariants) {
         const oldVariant = oldVariants.find(x => x.name === v.name && x.parentModuleNamedReference.name === v.parentModuleNamedReference.name);
         const replacedValues = v.variantValueList;
         
-        const keepVariantValueList = oldVariant.variantValueList.filter(x => !Boolean(replacedValues.find(y => y.featureNamedReference.name === x.featureNamedReference.name)));
+        const keepVariantValueList = oldVariant?.variantValueList.filter(x => !Boolean(replacedValues.find(y => y.featureNamedReference.name === x.featureNamedReference.name))) || [];
         const variantValueList = keepVariantValueList.concat(replacedValues);
         
         return {
