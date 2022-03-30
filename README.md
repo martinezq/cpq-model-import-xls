@@ -15,7 +15,7 @@ Node.js
 ## Supported features
 
 - Save all CPQ modules and variants to XLS file
-- Update all CPQ modules and variants from XLS file
+- Replace all CPQ modules and variants from XLS file (identified by name)
 - Only global features supported
 
 ## Commands
