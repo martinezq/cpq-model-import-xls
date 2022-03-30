@@ -20,7 +20,7 @@ export async function saveXls(moduleData, globalFeatureData, path) {
 }
 
 function createGlobalFeaturesTable(workbook, moduleData, globalFeatureData) {
-    const worksheet = workbook.addWorksheet('Module variants');
+    const worksheet = workbook.addWorksheet('Module variants (v2)');
 
     const standardColumns = [
         { name: 'Module name', key: 'moduleName', width: 30, filterButton: true },

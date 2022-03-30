@@ -4,13 +4,17 @@ import CLI from 'clui';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 
 import * as config from '../util/config.js'
-import { convertXlsToCPQ } from '../util/convert-xls-to-cpq.js';
+
+import * as convert_v1 from '../util/convert-xls-to-cpq.js';
+import * as convert_v2 from '../util/convert-xls-to-cpq-v2.js';
+import * as read_v1 from '../util/read-cpq-to-xls.js';
+import * as read_v2 from '../util/read-cpq-to-xls-v2.js';
+
 import { merge } from '../util/merge-cpq.js';
 import { createRemote } from '../util/promo-api.js';
-import { readCpq } from '../util/read-cpq-to-xls.js';
 
 export default {
-  command: 'xls-to-cpq [file] [conf]',
+  command: 'xls-to-cpq [file] [conf] [ver]',
   desc: 'Write from xlsx file to CPQ',
   builder: {},
   handler: async (argv) => {
@@ -24,6 +28,16 @@ export default {
       console.log(`${chalk.red('Config name is required')}`);
       return;
     }
+
+    argv.ver = argv.ver || 'v1'
+
+    if (!(argv.ver === 'v1' || argv.ver === 'v2')) {
+      console.log(`${chalk.red('Unsupported version ' + argv.ver)}`);
+      return;
+    }
+
+    const { readCpq } = argv.ver === 'v1' ? read_v1 : read_v2;
+    const { convertXlsToCPQ } = argv.ver === 'v1' ? convert_v1 : convert_v2;
 
     try {
       const conf = config.get(argv.conf);
