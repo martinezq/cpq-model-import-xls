@@ -20,39 +20,49 @@ export async function saveXls(moduleData, globalFeatureData, path) {
 }
 
 function createGlobalFeaturesTable(workbook, moduleData, globalFeatureData) {
-    const worksheet = workbook.addWorksheet('Module variants (v2)');
+    const translationLanguages = R.uniq(moduleData.variantResourceList.map(ref => R.keys(ref.variant.descriptionTranslations)).flat());
 
-    const standardColumns = [
-        { name: 'Module name', key: 'moduleName', width: 30, filterButton: true },
-        { name: 'Module description', key: 'moduleDescription', width: 30, filterButton: true },
-        { name: 'Variant name', key: 'variantName', width: 30, filterButton: true },
-        { name: 'Variant description', key: 'variantDescription', width: 30, filterButton: true }
-    ];
+    const findModule = v => moduleData.moduleResourceList.find(mRef => mRef.module.name === v.parentModuleNamedReference.name)?.module;
 
-    const featureColumns = globalFeatureData.featureResourceList.map(ref => ({
-        name: ref.feature.name, 
-        key: ref.feature.name, 
+    const standardColumnResolvers = {
+        'Module: name': v => findModule(v).name,
+        'Module: description': v => findModule(v).description,
+        ...R.mergeAll(translationLanguages.map(l => ({
+            [`Module: description_${l}`]: v => findModule(v).descriptionTranslations?.[l]
+        }))),
+        'Variant: name': v => v.name,
+        'Variant: description': v => v.description,
+        ...R.mergeAll(translationLanguages.map(l => ({
+            [`Variant: description_${l}`]: v => v.descriptionTranslations?.de
+        })))
+    };
+
+    const featureColumnResolvers = R.mergeAll(
+        globalFeatureData.featureResourceList.map(ref => ref.feature).map(f =>({
+            [`Feature: ${f.name}`]: v => v.variantValueList.find(val => val.featureNamedReference.name === f.name)?.value
+        }))
+    );
+
+    const columnResolvers = { ...standardColumnResolvers, ...featureColumnResolvers };
+
+    const columnNames = R.keys(columnResolvers);
+
+    // ------------------------------------------------------------------------
+
+    const xlsColumns = columnNames.map(c => ({
+        name: c, 
+        key: c, 
         width: 20,
         filterButton: true
     }));
 
-    const featuresNames = globalFeatureData.featureResourceList.map(ref => ref.feature.name);
-
-    const rows = moduleData.variantResourceList.map(ref => {
-        const moduleRef = moduleData.moduleResourceList.find(mRef => mRef.module.name === ref.variant.parentModuleNamedReference.name);
-        
-        const featuresValues = featuresNames.map(featureName => {
-            const val = ref.variant.variantValueList.find(val => val.featureNamedReference.name === featureName);
-            return val ? val.value : undefined;
-        });
-
-        return [
-            moduleRef.module.name,
-            moduleRef.module.description,
-            ref.variant.name,
-            ref.variant.description
-        ].concat(featuresValues);
+    const xlsRows = moduleData.variantResourceList.map(ref => {
+        return R.values(R.mapObjIndexed(resolver => resolver(ref.variant), columnResolvers));
      });
+
+    // ------------------------------------------------------------------------
+
+    const worksheet = workbook.addWorksheet('Module variants (v2)');
 
     worksheet.addTable({
         name: 'VariantsTable',
@@ -63,9 +73,10 @@ function createGlobalFeaturesTable(workbook, moduleData, globalFeatureData) {
             theme: 'TableStyleLight1',
             showRowStripes: true,
         },
-        columns: standardColumns.concat(featureColumns),
-        rows
+        columns: xlsColumns,
+        rows: xlsRows
     });
 
     worksheet.columns.forEach(col => col.width = 30);
 }
+
