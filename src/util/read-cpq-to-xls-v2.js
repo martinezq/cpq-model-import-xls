@@ -1,5 +1,6 @@
 import * as R from 'ramda';
 import Excel from 'exceljs';
+import { readFileSync } from 'fs';
 
 import { listRemote } from './promo-api.js';
 
@@ -20,21 +21,58 @@ export async function saveXls(moduleData, globalFeatureData, path) {
 }
 
 function createGlobalFeaturesTable(workbook, moduleData, globalFeatureData) {
+    const input = JSON.parse(readFileSync('out/descriptions.json'));
+
     const translationLanguages = R.uniq(moduleData.variantResourceList.map(ref => R.keys(ref.variant.descriptionTranslations)).flat());
 
     const findModule = v => moduleData.moduleResourceList.find(mRef => mRef.module.name === v.parentModuleNamedReference.name)?.module;
+    const findInInput = v => input.find(x => x.characteristic === findModule(v).name && String(x.value) === v.name);
+
+    function buildModuleDescription(variant, lang) {
+        const isYesNo = Boolean(variant.parentModuleNamedReference.name.match(/.*\_YES\_NO/));
+
+        if (isYesNo) {
+            const yesNoDesc = lang === 'De' ? '(Ja/Nein)' : '(Yes/No)';
+            const [ _, charName, charValue ] = variant.parentModuleNamedReference.name.match(/([A-Za-z0-9_]+)\_\_([A-Za-z0-9_]+)\_\_YES\_NO/);
+            const src = input.find(x => x.characteristic === charName && String(x.value) === charValue);
+            
+            if (!src) return;
+            
+            return `${src['characteristicDescription' + lang]}: ${src['valueDescription' + lang]} ${yesNoDesc}`
+        } else {
+            return findInInput(variant)?.[`characteristicDescription${lang}`];
+        }
+    }
+
+    function buildVariantDescription(variant, lang) {
+        const isYesNo = Boolean(variant.parentModuleNamedReference.name.match(/.*\_YES\_NO/));
+
+        if (isYesNo) {
+            if (lang === 'De') {
+                return variant.name === 'Yes' ? 'Ja' : 'Nein';
+            } else {
+                return variant.name;
+            } 
+        } else {
+            return findInInput(variant)?.[`valueDescription${lang}`];
+        }
+    }
 
     const standardColumnResolvers = {
         'Module: name': v => findModule(v).name,
-        'Module: description': v => findModule(v).description,
+        'OLD Module: description': v => findModule(v).description,
+        'Module: description': v => buildModuleDescription(v, 'En'),
+        'Module: description_de': v => buildModuleDescription(v, 'De'),
         ...R.mergeAll(translationLanguages.map(l => ({
-            [`Module: description_${l}`]: v => findModule(v).descriptionTranslations?.[l]
+            [`OLD Module: description_${l}`]: v => findModule(v).descriptionTranslations?.[l]
         }))),
         'Variant: name': v => v.name,
-        'Variant: description': v => v.description,
+        'OLD Variant: description': v => v.description,
+        'Variant: description': v => buildVariantDescription(v, 'En'),
         ...R.mergeAll(translationLanguages.map(l => ({
-            [`Variant: description_${l}`]: v => v.descriptionTranslations?.de
-        })))
+            [`OLD Variant: description_${l}`]: v => v.descriptionTranslations?.de
+        }))),
+        'Variant: description_de': v => buildVariantDescription(v, 'De'),
     };
 
     const featureColumnResolvers = R.mergeAll(
@@ -43,7 +81,7 @@ function createGlobalFeaturesTable(workbook, moduleData, globalFeatureData) {
         }))
     );
 
-    const columnResolvers = { ...standardColumnResolvers, ...featureColumnResolvers };
+    const columnResolvers = { ...standardColumnResolvers };
 
     const columnNames = R.keys(columnResolvers);
 
