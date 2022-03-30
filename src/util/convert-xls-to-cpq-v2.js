@@ -7,29 +7,20 @@ function convertSheetToRawData(sheet) {
     const val = (row, colNum) => row.getCell(colNum).result || row.getCell(colNum).value
 
     let columnNames = [];
-    let featureNames = [];
-    let count = 0;
 
     sheet.eachRow((row, rowNum) => {
         if (rowNum === 1) {
-            for (let i=0; val(row, i) !== null; i++) {
+            for (let i=1; val(row, i) !== null; i++) {
                 columnNames.push(val(row, i));
-                count++;
             }
+
+            // console.log(columnNames);
         }
 
         if (rowNum > 1) {
-            let item = {
-                moduleName: val(row, 1),
-                moduleDescription: val(row, 2),
-                variantName: val(row, 3),
-                variantDescription: val(row, 4),
-                featureValues: {}
-            }
-
-            for (let i=0; i<count; i++) {
-                item.featureValues[featureNames[i]] = val(row, i + 5);
-            }
+            const item = R.mergeAll(columnNames.map((c, i) => ({
+                [c]: val(row, i + 1)
+            })));
 
             // console.log(item);
 
@@ -41,7 +32,7 @@ function convertSheetToRawData(sheet) {
 }
 
 function extractModules(data) {
-    const groupByModuleName = R.groupBy(item => item.moduleName);
+    const groupByModuleName = R.groupBy(item => item['Module: name']);
     const moduleGroups = groupByModuleName(data);
 
     const moduleNames = R.keys(moduleGroups);
@@ -49,9 +40,17 @@ function extractModules(data) {
     return moduleNames.map(key => {
         const group = moduleGroups[key];
         const head = R.head(group);
+
+        const descriptionLanguages = R.uniq(R.keys(head).map(x => x.match(/Module: description\_([a-z]+)/)?.[1]).filter(R.identity));
+
+        // console.log(descriptionLanguages);
+
         return {
-            name: head.moduleName,
-            description: head.moduleDescription
+            name: head['Module: name'],
+            description: head['Module: description'],
+            descriptionTranslations: R.mergeAll(descriptionLanguages.map(l => ({
+                [l]: head[`Module: description_${l}`]
+            })))
         }
     })
 }
@@ -67,22 +66,32 @@ function extractVariants(data) {
         const group = moduleGroups[key];
         const head = R.head(group);
 
-        return group.map(v => ({
-            name: v.variantName,
-            description: v.variantDescription,
-            status: 'Active',
-            parentModuleNamedReference: {
-                name: v.moduleName
-            },
-            variantPartList: [],
-            variantValueList: R.keys(v.featureValues).map(f => ({
-                value: v.featureValues[f],
-                featureNamedReference: {
-                    name: f
-                }
+        return group.map(v => {
+            const descriptionLanguages = R.uniq(R.keys(v).map(x => x.match(/Variant: description\_([a-z]+)/)?.[1]).filter(R.identity));
+            
+            const featureNames = R.keys(v).map(c => c.match(/Feature: (.*)/)?.[1]).filter(R.identity);
+            // const featuresObject = R.pickBy((v, n) => n.match(/Feature: .*/), v);
+            // const x = R.mapObjIndexed()
+            // console.log(featureNames);
 
-            }))
-        }));
+            return {
+                name: v['Variant: name'],
+                description: v['Variant: description'],
+                descriptionTranslations: R.mergeAll(descriptionLanguages.map(l => ({
+                    [l]: v[`Variant: description_${l}`]
+                }))),
+                parentModuleNamedReference: {
+                    name: v['Module: name']
+                },
+                variantValueList: featureNames.map(f => ({
+                    value: v[`Feature: ${f}`],
+                    featureNamedReference: {
+                        name: f
+                    }
+
+                }))
+            }
+        });
 
     });
 

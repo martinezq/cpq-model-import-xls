@@ -15,6 +15,8 @@ function mergeVariants(oldVariants, newVariants) {
         const variantValueList = keepVariantValueList.concat(replacedValues);
         
         return {
+            status: 'Active',
+            ...(oldVariant || {}),
             ...v,
             variantValueList
         }
