@@ -61,18 +61,18 @@ function createGlobalFeaturesTable(workbook, moduleData, globalFeatureData) {
     const standardColumnResolvers = {
         'Module: name': v => findModule(v).name,
         'OLD Module: description': v => findModule(v).description,
-        'Module: description': v => buildModuleDescription(v, 'En'),
-        'Module: description_de': v => buildModuleDescription(v, 'De'),
+        'Module: description': v => buildModuleDescription(v, 'En') || findModule(v).description,
+        'Module: description_de': v => buildModuleDescription(v, 'De') || findModule(v).descriptionTranslations?.['de'],
         ...R.mergeAll(translationLanguages.map(l => ({
             [`OLD Module: description_${l}`]: v => findModule(v).descriptionTranslations?.[l]
         }))),
         'Variant: name': v => v.name,
         'OLD Variant: description': v => v.description,
-        'Variant: description': v => buildVariantDescription(v, 'En'),
+        'Variant: description': v => buildVariantDescription(v, 'En') || v.description,
         ...R.mergeAll(translationLanguages.map(l => ({
             [`OLD Variant: description_${l}`]: v => v.descriptionTranslations?.de
         }))),
-        'Variant: description_de': v => buildVariantDescription(v, 'De'),
+        'Variant: description_de': v => buildVariantDescription(v, 'De') || v.descriptionTranslations?.de,
     };
 
     const featureColumnResolvers = R.mergeAll(
